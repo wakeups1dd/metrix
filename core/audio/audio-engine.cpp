@@ -1,10 +1,8 @@
 #include "audio-engine.h"
 
 #ifdef _WIN32
+
 #include <algorithm>
-#else
-#error "Audio engine implementation is only supported on Windows platforms."
-#endif
 
 namespace openmeters::core::audio {
 
@@ -126,4 +124,9 @@ void AudioEngine::MeteringCallback::onMeterData(const common::MeterSnapshot& sna
 }
 
 } // namespace openmeters::core::audio
+
+#else
+// Non-Windows platforms: This file should not be compiled
+#error "Audio engine implementation is only supported on Windows platforms. This file should not be compiled on non-Windows systems."
+#endif // _WIN32
 
