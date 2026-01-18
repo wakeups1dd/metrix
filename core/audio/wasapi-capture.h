@@ -2,9 +2,15 @@
 
 #include "audio-engine-interface.h"
 #include "../../common/audio-format.h"
+
+#ifdef _WIN32
 #include <windows.h>
 #include <mmdeviceapi.h>
 #include <audioclient.h>
+#else
+#error "WASAPI capture is only supported on Windows platforms. This file should not be compiled on non-Windows systems."
+#endif
+
 #include <vector>
 #include <mutex>
 #include <atomic>

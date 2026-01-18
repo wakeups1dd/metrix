@@ -1,7 +1,12 @@
 #include "wasapi-capture.h"
+
+#ifdef _WIN32
 #include "../../common/types.h"
 #include <algorithm>
 #include <cmath>
+#else
+#error "WASAPI capture implementation is only supported on Windows platforms."
+#endif
 
 namespace openmeters::core::audio {
 

@@ -1,11 +1,16 @@
 #pragma once
 
 #include "audio-engine-interface.h"
-#include "wasapi-capture.h"
 #include "../../core/meters/peak-meter.h"
 #include "../../core/meters/rms-meter.h"
 #include <vector>
 #include <mutex>
+
+#ifdef _WIN32
+#include "wasapi-capture.h"
+#else
+#error "Audio engine currently requires Windows WASAPI. Platform-specific implementations not yet available."
+#endif
 
 namespace openmeters::core::audio {
 

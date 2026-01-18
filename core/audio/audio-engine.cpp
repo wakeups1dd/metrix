@@ -1,5 +1,10 @@
 #include "audio-engine.h"
+
+#ifdef _WIN32
 #include <algorithm>
+#else
+#error "Audio engine implementation is only supported on Windows platforms."
+#endif
 
 namespace openmeters::core::audio {
 

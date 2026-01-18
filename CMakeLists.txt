@@ -53,9 +53,21 @@ target_link_libraries(meters PUBLIC
 )
 
 # Audio engine library
+# Windows-specific sources
+if(WIN32)
+    set(AUDIO_ENGINE_SOURCES
+        core/audio/wasapi-capture.cpp
+        core/audio/audio-engine.cpp
+    )
+else()
+    # On non-Windows platforms, audio engine is not yet implemented
+    # TODO: Add Linux/macOS audio capture implementations here
+    # For now, building on non-Windows will fail with a clear error message
+    message(FATAL_ERROR "Audio engine is currently Windows-only. Linux/macOS support coming soon.")
+endif()
+
 add_library(audio_engine STATIC
-    core/audio/wasapi-capture.cpp
-    core/audio/audio-engine.cpp
+    ${AUDIO_ENGINE_SOURCES}
 )
 target_include_directories(audio_engine PUBLIC
     ${CMAKE_SOURCE_DIR}
@@ -67,6 +79,10 @@ target_link_libraries(audio_engine PUBLIC
 if(WIN32)
     target_link_libraries(audio_engine PRIVATE
         ${WINDOWS_AUDIO_LIBS}
+    )
+    target_compile_definitions(audio_engine PRIVATE
+        WIN32_LEAN_AND_MEAN
+        NOMINMAX
     )
 endif()
 
