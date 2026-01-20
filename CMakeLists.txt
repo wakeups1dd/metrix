@@ -136,19 +136,28 @@ endif()
 
 # Application executable (Windows-only)
 if(WIN32)
-    add_executable(openmeters
-        app/main.cpp
-    )
-    target_link_libraries(openmeters PRIVATE
-        audio_engine
-        meters
-        common
-    )
-    
-    # Link UI if available
     if(TARGET ui)
-        target_link_libraries(openmeters PRIVATE ui)
+        # GUI Mode: Use WIN32 subsystem and main-gui.cpp
+        add_executable(openmeters WIN32
+            app/main-gui.cpp
+        )
+        target_link_libraries(openmeters PRIVATE
+            audio_engine
+            meters
+            common
+            ui
+        )
         target_compile_definitions(openmeters PRIVATE BUILD_GUI=1)
+    else()
+        # Console Mode: Default subsystem and main.cpp
+        add_executable(openmeters
+            app/main.cpp
+        )
+        target_link_libraries(openmeters PRIVATE
+            audio_engine
+            meters
+            common
+        )
     endif()
 else()
     message(FATAL_ERROR "OpenMeters executable is Windows-only. This project requires Windows and WASAPI.")
