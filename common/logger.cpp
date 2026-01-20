@@ -6,7 +6,7 @@
 namespace openmeters::common {
 
 std::unique_ptr<std::ofstream> Logger::s_logFile = nullptr;
-std::mutex Logger::s_logMutex;
+std::recursive_mutex Logger::s_logMutex;
 LogLevel Logger::s_minLevel = LogLevel::Info;
 bool Logger::s_consoleEnabled = true;
 bool Logger::s_initialized = false;

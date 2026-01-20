@@ -114,7 +114,7 @@ private:
     static std::string getTimestamp();
     
     static std::unique_ptr<std::ofstream> s_logFile;
-    static std::mutex s_logMutex;
+    static std::recursive_mutex s_logMutex;
     static LogLevel s_minLevel;
     static bool s_consoleEnabled;
     static bool s_initialized;
