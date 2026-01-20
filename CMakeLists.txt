@@ -22,6 +22,11 @@ if(NOT WIN32)
     message(FATAL_ERROR "OpenMeters is Windows-only. This project requires Windows 10+ and WASAPI.")
 endif()
 
+# Force static runtime (MT) for MSVC to avoid missing DLLs
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 # Use Windows SDK
 set(CMAKE_SYSTEM_VERSION 10.0)
 

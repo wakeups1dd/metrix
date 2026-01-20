@@ -41,73 +41,84 @@ private:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     (void)hPrevInstance;
     (void)lpCmdLine;
-    
-    // Initialize logger
-    std::string logPath = "logs/openmeters.log";
-    if (!common::Logger::initialize(logPath, common::LogLevel::Info, true)) {
-        MessageBoxA(nullptr, "Failed to initialize logger", "OpenMeters Error", MB_OK | MB_ICONERROR);
-        return 1;
-    }
-    
-    LOG_INFO("OpenMeters starting...");
-    
-    // Load configuration
-    common::ConfigManager::load();
-    
-    // Create window
-    ui::Window window;
-    if (!window.initialize(hInstance, nCmdShow)) {
-        LOG_ERROR("Failed to initialize window");
-        MessageBoxA(nullptr, "Failed to initialize window", "OpenMeters Error", MB_OK | MB_ICONERROR);
-        common::Logger::shutdown();
-        return 1;
-    }
-    
-    // Create audio engine
-    core::audio::AudioEngine engine;
-    if (!engine.initialize()) {
-        LOG_ERROR("Failed to initialize audio engine");
-        MessageBoxA(nullptr, "Failed to initialize audio engine. Check audio device.", 
-                   "OpenMeters Error", MB_OK | MB_ICONERROR);
-        window.shutdown();
-        common::Logger::shutdown();
-        return 1;
-    }
-    
-    LOG_INFO("Audio format: " + std::to_string(engine.getFormat().sampleRate) + " Hz, " +
-             std::to_string(engine.getFormat().channelCount) + " channel(s)");
-    
-    // Register callback
-    GuiCallback callback(&window);
-    engine.registerCallback(&callback);
-    
-    // Start capture
-    if (!engine.start()) {
-        LOG_ERROR("Failed to start audio capture");
-        MessageBoxA(nullptr, "Failed to start audio capture", "OpenMeters Error", MB_OK | MB_ICONERROR);
+
+    try {
+        // Initialize logger
+        std::string logPath = "logs/openmeters.log";
+        if (!common::Logger::initialize(logPath, common::LogLevel::Info, true)) {
+            MessageBoxA(nullptr, "Failed to initialize logger", "OpenMeters Error", MB_OK | MB_ICONERROR);
+            return 1;
+        }
+        
+        LOG_INFO("OpenMeters starting...");
+        
+        // Load configuration
+        common::ConfigManager::load();
+        
+        // Create window
+        ui::Window window;
+        if (!window.initialize(hInstance, nCmdShow)) {
+            LOG_ERROR("Failed to initialize window");
+            MessageBoxA(nullptr, "Failed to initialize window", "OpenMeters Error", MB_OK | MB_ICONERROR);
+            common::Logger::shutdown();
+            return 1;
+        }
+        
+        // Create audio engine
+        core::audio::AudioEngine engine;
+        if (!engine.initialize()) {
+            LOG_ERROR("Failed to initialize audio engine");
+            MessageBoxA(nullptr, "Failed to initialize audio engine. Check audio device.", 
+                       "OpenMeters Error", MB_OK | MB_ICONERROR);
+            window.shutdown();
+            common::Logger::shutdown();
+            return 1;
+        }
+        
+        LOG_INFO("Audio format: " + std::to_string(engine.getFormat().sampleRate) + " Hz, " +
+                 std::to_string(engine.getFormat().channelCount) + " channel(s)");
+        
+        // Register callback
+        GuiCallback callback(&window);
+        engine.registerCallback(&callback);
+        
+        // Start capture
+        if (!engine.start()) {
+            LOG_ERROR("Failed to start audio capture");
+            MessageBoxA(nullptr, "Failed to start audio capture", "OpenMeters Error", MB_OK | MB_ICONERROR);
+            engine.shutdown();
+            window.shutdown();
+            common::Logger::shutdown();
+            return 1;
+        }
+        
+        LOG_INFO("Audio capture started");
+        
+        // Run main loop
+        window.run();
+        
+        // Cleanup
+        LOG_INFO("Shutting down...");
+        engine.stop();
+        engine.unregisterCallback(&callback);
         engine.shutdown();
         window.shutdown();
+        
+        // Save configuration
+        common::ConfigManager::save();
+        
         common::Logger::shutdown();
+        return 0;
+
+    } catch (const std::exception& e) {
+        std::string errorMsg = "Unhandled Exception: ";
+        errorMsg += e.what();
+        MessageBoxA(nullptr, errorMsg.c_str(), "OpenMeters Fatal Error", MB_OK | MB_ICONERROR);
+        return 1;
+    } catch (...) {
+        MessageBoxA(nullptr, "Unknown Unhandled Exception occurred.", "OpenMeters Fatal Error", MB_OK | MB_ICONERROR);
         return 1;
     }
-    
-    LOG_INFO("Audio capture started");
-    
-    // Run main loop
-    window.run();
-    
-    // Cleanup
-    LOG_INFO("Shutting down...");
-    engine.stop();
-    engine.unregisterCallback(&callback);
-    engine.shutdown();
-    window.shutdown();
-    
-    // Save configuration
-    common::ConfigManager::save();
-    
-    common::Logger::shutdown();
-    return 0;
 }
 
 #endif // BUILD_GUI
