@@ -14,12 +14,12 @@ echo [Dependency Setup] Starting...
 
 :: 1. ImGui (Docking Branch)
 :: 1. ImGui (Docking Branch)
-if exist "%THIRD_PARTY%\imgui\imgui.h" (
-    echo [ImGui] Already exists, skipping clone.
-) else (
-    echo [ImGui] Cloning ocornut/imgui docking...
-    if exist "%THIRD_PARTY%\imgui" rmdir /s /q "%THIRD_PARTY%\imgui"
-    git clone --branch docking --depth 1 https://github.com/ocornut/imgui.git "%THIRD_PARTY%\imgui"
+echo [ImGui] checking submodule...
+git submodule update --init --recursive third_party/imgui
+
+if not exist "%THIRD_PARTY%\imgui\imgui.h" (
+    echo [ERROR] ImGui submodule failed to update.
+    exit /b 1
 )
 
 :: 2. nlohmann/json
