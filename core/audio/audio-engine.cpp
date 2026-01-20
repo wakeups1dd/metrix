@@ -27,6 +27,7 @@ bool AudioEngine::initialize() {
 }
 
 bool AudioEngine::start() {
+    m_startTime = std::chrono::steady_clock::now();
     return m_capture.start();
 }
 
@@ -111,8 +112,13 @@ void AudioEngine::MeteringCallback::onAudioData(
     common::MeterSnapshot snapshot;
     snapshot.peak = peak;
     snapshot.rms = rms;
-    // TODO: Implement proper timestamp
-    snapshot.timestampMs = 0;
+    // Calculate timestamp relative to start time
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now - m_engine->m_startTime
+    ).count();
+    
+    snapshot.timestampMs = static_cast<long long>(elapsed);
     
     // Forward to engine callbacks
     m_engine->forwardMeterData(snapshot);

@@ -5,6 +5,7 @@
 #include "../../core/meters/rms-meter.h"
 #include <vector>
 #include <mutex>
+#include <chrono>
 
 #ifdef _WIN32
 #include "wasapi-capture.h"
@@ -76,6 +77,7 @@ private:
     
     std::mutex m_callbackMutex;
     std::vector<IAudioDataCallback*> m_callbacks;
+    std::chrono::steady_clock::time_point m_startTime;
 };
 
 } // namespace openmeters::core::audio

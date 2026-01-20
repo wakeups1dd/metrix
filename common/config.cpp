@@ -57,24 +57,38 @@ bool AppConfig::loadFromFile(const std::string& configPath) {
         return false;
     }
     
-    // Simple JSON parsing (basic implementation)
-    // TODO: Use proper JSON library (nlohmann/json) for production
-    std::string line;
-    while (std::getline(file, line)) {
-        // Remove whitespace
-        line.erase(0, line.find_first_not_of(" \t"));
-        line.erase(line.find_last_not_of(" \t") + 1);
+    try {
+        nlohmann::json j;
+        file >> j;
         
-        // Simple key-value parsing
-        if (line.find("\"windowX\"") != std::string::npos) {
-            // Extract value (simplified)
-            // In production, use proper JSON parser
-        }
-        // ... similar for other fields
+        // Window settings
+        if (j.contains("windowX")) windowX = j["windowX"];
+        if (j.contains("windowY")) windowY = j["windowY"];
+        if (j.contains("windowWidth")) windowWidth = j["windowWidth"];
+        if (j.contains("windowHeight")) windowHeight = j["windowHeight"];
+        if (j.contains("alwaysOnTop")) alwaysOnTop = j["alwaysOnTop"];
+        if (j.contains("showWindow")) showWindow = j["showWindow"];
+        
+        // Meter settings
+        if (j.contains("meterUpdateRate")) meterUpdateRate = j["meterUpdateRate"];
+        if (j.contains("showPeakMeter")) showPeakMeter = j["showPeakMeter"];
+        if (j.contains("showRmsMeter")) showRmsMeter = j["showRmsMeter"];
+        if (j.contains("meterDecayRate")) meterDecayRate = j["meterDecayRate"];
+        
+        // Audio settings
+        if (j.contains("autoStartCapture")) autoStartCapture = j["autoStartCapture"];
+        if (j.contains("audioBufferSize")) audioBufferSize = j["audioBufferSize"];
+        
+        // UI settings
+        if (j.contains("uiScale")) uiScale = j["uiScale"];
+        if (j.contains("darkMode")) darkMode = j["darkMode"];
+        
+        LOG_INFO("Config loaded from: " + configPath);
+        return true;
+    } catch (const std::exception& e) {
+        LOG_ERROR("Failed to parse config file: " + std::string(e.what()));
+        return false;
     }
-    
-    LOG_INFO("Config loaded from: " + configPath);
-    return true;
 }
 
 bool AppConfig::saveToFile(const std::string& configPath) const {
@@ -91,28 +105,40 @@ bool AppConfig::saveToFile(const std::string& configPath) const {
         return false;
     }
     
-    // Simple JSON writing (basic implementation)
-    // TODO: Use proper JSON library for production
-    file << "{\n";
-    file << "  \"windowX\": " << windowX << ",\n";
-    file << "  \"windowY\": " << windowY << ",\n";
-    file << "  \"windowWidth\": " << windowWidth << ",\n";
-    file << "  \"windowHeight\": " << windowHeight << ",\n";
-    file << "  \"alwaysOnTop\": " << (alwaysOnTop ? "true" : "false") << ",\n";
-    file << "  \"showWindow\": " << (showWindow ? "true" : "false") << ",\n";
-    file << "  \"meterUpdateRate\": " << meterUpdateRate << ",\n";
-    file << "  \"showPeakMeter\": " << (showPeakMeter ? "true" : "false") << ",\n";
-    file << "  \"showRmsMeter\": " << (showRmsMeter ? "true" : "false") << ",\n";
-    file << "  \"meterDecayRate\": " << meterDecayRate << ",\n";
-    file << "  \"autoStartCapture\": " << (autoStartCapture ? "false" : "false") << ",\n";
-    file << "  \"audioBufferSize\": " << audioBufferSize << ",\n";
-    file << "  \"uiScale\": " << uiScale << ",\n";
-    file << "  \"darkMode\": " << (darkMode ? "true" : "false") << "\n";
-    file << "}\n";
-    
-    file.close();
-    LOG_INFO("Config saved to: " + configPath);
-    return true;
+    try {
+        nlohmann::json j;
+        
+        // Window settings
+        j["windowX"] = windowX;
+        j["windowY"] = windowY;
+        j["windowWidth"] = windowWidth;
+        j["windowHeight"] = windowHeight;
+        j["alwaysOnTop"] = alwaysOnTop;
+        j["showWindow"] = showWindow;
+        
+        // Meter settings
+        j["meterUpdateRate"] = meterUpdateRate;
+        j["showPeakMeter"] = showPeakMeter;
+        j["showRmsMeter"] = showRmsMeter;
+        j["meterDecayRate"] = meterDecayRate;
+        
+        // Audio settings
+        j["autoStartCapture"] = autoStartCapture;
+        j["audioBufferSize"] = audioBufferSize;
+        
+        // UI settings
+        j["uiScale"] = uiScale;
+        j["darkMode"] = darkMode;
+        
+        file << j.dump(4); // Pretty print with 4 spaces
+        file.close();
+        
+        LOG_INFO("Config saved to: " + configPath);
+        return true;
+    } catch (const std::exception& e) {
+        LOG_ERROR("Failed to save config file: " + std::string(e.what()));
+        return false;
+    }
 }
 
 } // namespace openmeters::common

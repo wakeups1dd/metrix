@@ -3,6 +3,9 @@
 #include "types.h"
 #include <string>
 #include <memory>
+#include <vector>
+#include <nlohmann/json.hpp>
+
 
 namespace openmeters::common {
 
