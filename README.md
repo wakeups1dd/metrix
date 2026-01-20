@@ -16,7 +16,7 @@ The project follows a strict layered architecture:
 
 - **Core Audio Engine** (`/core/audio`) - WASAPI capture and audio processing
 - **Metering & DSP** (`/core/meters`) - Peak, RMS, and future LUFS/FFT implementations
-- **UI Layer** (`/ui`) - ImGui-based overlay (coming soon)
+- **UI Layer** (`/ui`) - ImGui-based overlay
 - **Application Layer** (`/app`) - Entry point and lifecycle management
 - **Common** (`/common`) - Shared types and utilities
 
@@ -31,6 +31,15 @@ The project follows a strict layered architecture:
 
 ### Build Steps
 
+```bash
+# 1. Install dependencies
+scripts/setup_dependencies.bat
+
+# 2. Build Release
+scripts/build_release.bat
+```
+
+Alternatively, manual CMake build:
 ```bash
 mkdir build
 cd build

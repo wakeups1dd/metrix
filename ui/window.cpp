@@ -2,6 +2,7 @@
 #include "../common/logger.h"
 #include "../common/config.h"
 #include <imgui.h>
+#include <imgui_internal.h> // Required for direct DrawList access
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
 #include <mutex>
@@ -161,6 +162,8 @@ bool Window::initializeImGui() {
         ImGui::StyleColorsLight();
     }
     
+    setupStyle();
+    
     // Setup platform/renderer backends
     ImGui_ImplWin32_Init(m_hWnd);
     ImGui_ImplDX11_Init(m_device, m_context);
@@ -244,11 +247,31 @@ void Window::renderMeters() {
     
     ImGui::Begin("Meters", nullptr, flags);
     
+    // Window dragging logic
+    if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+        POINT p;
+        if (GetCursorPos(&p)) {
+            // Get current window pos
+            RECT rect;
+            GetWindowRect(m_hWnd, &rect);
+            
+            // Move window
+            // Note: This is a simplified drag implementation. 
+            // For production, we'd calculate delta from previous frame.
+            // Since this runs every frame, we just need to handle the delta.
+            // However, ImGui doesn't give us raw delta easily without storing state.
+            // Better approach: Let Windows handle it via HTCAPTION
+            
+            ReleaseCapture();
+            SendMessageA(m_hWnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+        }
+    }
+    
     // Draw peak meters
     if (m_config.showPeakMeter) {
         ImGui::Text("Peak");
-        ImGui::ProgressBar(snapshot.peak.left, ImVec2(-1, 20), "L");
-        ImGui::ProgressBar(snapshot.peak.right, ImVec2(-1, 20), "R");
+        drawMeter("##PeakL", snapshot.peak.left, ImVec2(-1, 20));
+        drawMeter("##PeakR", snapshot.peak.right, ImVec2(-1, 20));
     }
     
     ImGui::Spacing();
@@ -256,8 +279,8 @@ void Window::renderMeters() {
     // Draw RMS meters
     if (m_config.showRmsMeter) {
         ImGui::Text("RMS");
-        ImGui::ProgressBar(snapshot.rms.left, ImVec2(-1, 20), "L");
-        ImGui::ProgressBar(snapshot.rms.right, ImVec2(-1, 20), "R");
+        drawMeter("##RmsL", snapshot.rms.left, ImVec2(-1, 20));
+        drawMeter("##RmsR", snapshot.rms.right, ImVec2(-1, 20));
     }
     
     // Settings button
@@ -266,6 +289,84 @@ void Window::renderMeters() {
     }
     
     ImGui::End();
+}
+
+void Window::setupStyle() {
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowRounding = 8.0f;
+    style.FrameRounding = 4.0f;
+    style.PopupRounding = 4.0f;
+    style.ScrollbarRounding = 4.0f;
+    style.GrabRounding = 4.0f;
+    
+    // Custom colors (Dark/Professional)
+    ImVec4* colors = style.Colors;
+    colors[ImGuiCol_WindowBg] = ImVec4(0.12f, 0.12f, 0.12f, 0.85f); // Semi-transparent dark background
+    colors[ImGuiCol_Border] = ImVec4(0.30f, 0.30f, 0.30f, 0.50f);
+    colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.20f, 0.20f, 0.54f);
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.30f, 0.30f, 0.30f, 0.40f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(0.40f, 0.40f, 0.40f, 0.67f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
+    colors[ImGuiCol_CheckMark] = ImVec4(0.00f, 0.90f, 0.00f, 1.00f); // Green accents
+    colors[ImGuiCol_SliderGrab] = ImVec4(0.00f, 0.90f, 0.00f, 1.00f);
+    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.20f, 1.00f, 0.20f, 1.00f);
+    colors[ImGuiCol_Button] = ImVec4(0.25f, 0.25f, 0.25f, 0.40f);
+    colors[ImGuiCol_ButtonHovered] = ImVec4(0.35f, 0.35f, 0.35f, 1.00f);
+    colors[ImGuiCol_ButtonActive] = ImVec4(0.45f, 0.45f, 0.45f, 1.00f);
+}
+
+void Window::drawMeter(const char* label, float value, const ImVec2& size) {
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->SkipItems) return;
+    
+    ImGuiContext& g = *GImGui;
+    const ImGuiStyle& style = g.Style;
+    const ImGuiID id = window->GetID(label);
+    
+    ImVec2 pos = window->DC.CursorPos;
+    ImVec2 actualSize = ImGui::CalcItemSize(size, ImGui::GetWindowWidth(), style.FramePadding.y * 2.0f);
+    const ImRect bb(pos, ImVec2(pos.x + actualSize.x, pos.y + actualSize.y));
+    
+    ImGui::ItemSize(actualSize, style.FramePadding.y);
+    if (!ImGui::ItemAdd(bb, id)) return;
+    
+    // Background
+    window->DrawList->AddRectFilled(bb.Min, bb.Max, ImGui::GetColorU32(ImGuiCol_FrameBg), style.FrameRounding);
+    
+    // Segments
+    // 20 segments total
+    const int segments = 20;
+    const float segmentSpacing = 2.0f;
+    const float segmentWidth = (actualSize.x - (style.FramePadding.x * 2) - (segmentSpacing * (segments - 1))) / segments;
+    const float segmentHeight = actualSize.y - (style.FramePadding.y * 2);
+    
+    // Clamp value 0-1
+    float v = std::clamp(value, 0.0f, 1.0f);
+    
+    for (int i = 0; i < segments; i++) {
+        float segmentThreshold = (float)i / (float)segments;
+        
+        if (v > segmentThreshold) {
+            float x = bb.Min.x + style.FramePadding.x + (i * (segmentWidth + segmentSpacing));
+            float y = bb.Min.y + style.FramePadding.y;
+            
+            ImU32 color;
+            if (segmentThreshold >= 0.9f) { // Over -6dB -> Red
+                color = IM_COL32(255, 50, 50, 255);
+            } else if (segmentThreshold >= 0.7f) { // Over -18dB -> Yellow
+                color = IM_COL32(255, 200, 50, 255);
+            } else { // Normal -> Green
+                color = IM_COL32(50, 255, 50, 255);
+            }
+            
+            window->DrawList->AddRectFilled(
+                ImVec2(x, y), 
+                ImVec2(x + segmentWidth, y + segmentHeight), 
+                color,
+                2.0f // Rounding
+            );
+        }
+    }
 }
 
 void Window::renderSettings() {

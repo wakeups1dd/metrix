@@ -92,6 +92,16 @@ private:
     void renderSettings();
     
     /**
+     * Setup custom ImGui style.
+     */
+    void setupStyle();
+    
+    /**
+     * Draw a segmented LED-style meter.
+     */
+    void drawMeter(const char* label, float value, const ImVec2& size);
+    
+    /**
      * Window procedure.
      */
     static LRESULT CALLBACK windowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
