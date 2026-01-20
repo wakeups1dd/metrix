@@ -1,7 +1,14 @@
 #ifdef _WIN32
 
+// Use GUI version if available, otherwise fall back to console
+#ifdef BUILD_GUI
+#include "main-gui.cpp"
+#else
+
 #include "../core/audio/audio-engine.h"
 #include "../common/meter-values.h"
+#include "../common/logger.h"
+#include "../common/config.h"
 #include <iostream>
 #include <iomanip>
 #include <chrono>
@@ -37,6 +44,15 @@ public:
 };
 
 int main() {
+    // Initialize logger
+    std::string logPath = "logs/openmeters.log";
+    common::Logger::initialize(logPath, common::LogLevel::Info, true);
+    
+    LOG_INFO("OpenMeters starting (console mode)...");
+    
+    // Load configuration
+    common::ConfigManager::load();
+    
     std::cout << "OpenMeters - Audio Metering Test\n";
     std::cout << "================================\n\n";
     
@@ -46,9 +62,13 @@ int main() {
     // Initialize
     std::cout << "Initializing audio engine...\n";
     if (!engine.initialize()) {
+        LOG_ERROR("Failed to initialize audio engine");
         std::cerr << "Failed to initialize audio engine.\n";
+        common::Logger::shutdown();
         return 1;
     }
+    
+    LOG_INFO("Audio engine initialized");
     
     // Print format info
     const auto format = engine.getFormat();
@@ -62,10 +82,14 @@ int main() {
     // Start capture
     std::cout << "Starting audio capture...\n";
     if (!engine.start()) {
+        LOG_ERROR("Failed to start audio capture");
         std::cerr << "Failed to start audio capture.\n";
         engine.shutdown();
+        common::Logger::shutdown();
         return 1;
     }
+    
+    LOG_INFO("Audio capture started");
     
     std::cout << "Capturing audio. Press Enter to stop...\n\n";
     
@@ -80,11 +104,18 @@ int main() {
     engine.unregisterCallback(&callback);
     
     // Shutdown
+    LOG_INFO("Shutting down...");
     engine.shutdown();
     
+    // Save configuration
+    common::ConfigManager::save();
+    
     std::cout << "Shutdown complete.\n";
+    common::Logger::shutdown();
     return 0;
 }
+
+#endif // BUILD_GUI
 
 #else
 // Non-Windows platforms: This application is Windows-only

@@ -46,9 +46,22 @@ The executable will be in `build/bin/Release/openmeters.exe`.
 ✅ Peak meter  
 ✅ RMS meter  
 ✅ Audio engine with callback interface  
-⏳ UI overlay (planned)  
+✅ GUI overlay (ImGui + DirectX11)  
+✅ Logging system  
+✅ Configuration management  
+✅ Automated testing (Catch2)  
+✅ Windows installer (NSIS)  
 ⏳ LUFS metering (planned)  
-⏳ FFT spectrum analysis (planned)  
+⏳ FFT spectrum analysis (planned)
+
+## Features
+
+- **Real-time Audio Metering**: Peak and RMS meters with low latency
+- **Always-on-Top Overlay**: Transparent overlay window that stays on top
+- **Configurable UI**: Dark/light mode, scaling, meter visibility
+- **Persistent Settings**: Configuration saved to `%APPDATA%/OpenMeters/`
+- **Comprehensive Logging**: File and console logging for diagnostics
+- **Low CPU Usage**: Optimized for minimal system impact  
 
 ## License
 

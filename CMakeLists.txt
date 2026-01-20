@@ -37,9 +37,13 @@ include_directories(
     ${CMAKE_SOURCE_DIR}
 )
 
-# Common library (header-only types)
-add_library(common INTERFACE)
-target_include_directories(common INTERFACE
+# Common library
+add_library(common STATIC
+    common/logger.cpp
+    common/config.cpp
+)
+target_include_directories(common PUBLIC
+    ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/common
 )
 
@@ -79,6 +83,51 @@ else()
     message(FATAL_ERROR "OpenMeters is Windows-only. This project requires Windows and WASAPI.")
 endif()
 
+# UI library (Windows-only, requires ImGui)
+if(WIN32)
+    # Find or include ImGui
+    # For now, assume ImGui is in third_party/imgui or system-installed
+    set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/third_party/imgui" CACHE PATH "ImGui directory")
+    
+    if(EXISTS "${IMGUI_DIR}/imgui.h")
+        # ImGui found in third_party
+        add_library(imgui STATIC
+            ${IMGUI_DIR}/imgui.cpp
+            ${IMGUI_DIR}/imgui_demo.cpp
+            ${IMGUI_DIR}/imgui_draw.cpp
+            ${IMGUI_DIR}/imgui_tables.cpp
+            ${IMGUI_DIR}/imgui_widgets.cpp
+            ${IMGUI_DIR}/backends/imgui_impl_win32.cpp
+            ${IMGUI_DIR}/backends/imgui_impl_dx11.cpp
+        )
+        target_include_directories(imgui PUBLIC
+            ${IMGUI_DIR}
+            ${IMGUI_DIR}/backends
+        )
+        target_link_libraries(imgui PRIVATE d3d11)
+    else()
+        message(WARNING "ImGui not found. GUI features will be disabled.")
+        set(BUILD_GUI OFF)
+    endif()
+    
+    if(EXISTS "${IMGUI_DIR}/imgui.h")
+        add_library(ui STATIC
+            ui/window.cpp
+        )
+        target_include_directories(ui PUBLIC
+            ${CMAKE_SOURCE_DIR}
+        )
+        target_link_libraries(ui PUBLIC
+            common
+            imgui
+        )
+        target_link_libraries(ui PRIVATE
+            d3d11
+            dxgi
+        )
+    endif()
+endif()
+
 # Application executable (Windows-only)
 if(WIN32)
     add_executable(openmeters
@@ -89,8 +138,40 @@ if(WIN32)
         meters
         common
     )
+    
+    # Link UI if available
+    if(TARGET ui)
+        target_link_libraries(openmeters PRIVATE ui)
+        target_compile_definitions(openmeters PRIVATE BUILD_GUI=1)
+    endif()
 else()
     message(FATAL_ERROR "OpenMeters executable is Windows-only. This project requires Windows and WASAPI.")
+endif()
+
+# Testing (optional, requires Catch2)
+option(BUILD_TESTS "Build unit tests" OFF)
+if(BUILD_TESTS)
+    # Find Catch2
+    find_package(Catch2 QUIET)
+    if(Catch2_FOUND)
+        enable_testing()
+        
+        add_executable(test_meters
+            tests/test_peak_meter.cpp
+            tests/test_rms_meter.cpp
+        )
+        target_link_libraries(test_meters PRIVATE
+            meters
+            common
+            Catch2::Catch2
+        )
+        
+        include(CTest)
+        include(Catch)
+        catch_discover_tests(test_meters)
+    else()
+        message(WARNING "Catch2 not found. Tests will not be built.")
+    endif()
 endif()
 
 # Install rules (optional, Windows-only)
