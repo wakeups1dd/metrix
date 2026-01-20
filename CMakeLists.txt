@@ -112,8 +112,7 @@ if(WIN32)
         )
         target_link_libraries(imgui PRIVATE d3d11)
     else()
-        message(WARNING "ImGui not found. GUI features will be disabled.")
-        set(BUILD_GUI OFF)
+        message(FATAL_ERROR "ImGui not found in third_party/imgui. Cannot build GUI. Please run scripts/setup_dependencies.bat")
     endif()
     
     if(EXISTS "${IMGUI_DIR}/imgui.h")
@@ -149,15 +148,7 @@ if(WIN32)
         )
         target_compile_definitions(openmeters PRIVATE BUILD_GUI=1)
     else()
-        # Console Mode: Default subsystem and main.cpp
-        add_executable(openmeters
-            app/main.cpp
-        )
-        target_link_libraries(openmeters PRIVATE
-            audio_engine
-            meters
-            common
-        )
+        message(FATAL_ERROR "Target 'ui' missing/failed. Cannot build OpenMeters GUI.")
     endif()
 else()
     message(FATAL_ERROR "OpenMeters executable is Windows-only. This project requires Windows and WASAPI.")

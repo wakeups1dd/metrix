@@ -13,10 +13,12 @@ if not exist "%JSON_DIR%" mkdir "%JSON_DIR%"
 echo [Dependency Setup] Starting...
 
 :: 1. ImGui (Docking Branch)
-if exist "%THIRD_PARTY%\imgui" (
+:: 1. ImGui (Docking Branch)
+if exist "%THIRD_PARTY%\imgui\imgui.h" (
     echo [ImGui] Already exists, skipping clone.
 ) else (
     echo [ImGui] Cloning ocornut/imgui docking...
+    if exist "%THIRD_PARTY%\imgui" rmdir /s /q "%THIRD_PARTY%\imgui"
     git clone --branch docking --depth 1 https://github.com/ocornut/imgui.git "%THIRD_PARTY%\imgui"
 )
 
